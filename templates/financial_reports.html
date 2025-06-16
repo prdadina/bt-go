@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BT-GO - Rapoarte Financiare</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #1e40af;
+        }
+
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 64, 175, 0.3);
+        }
+
+        .nav-tabs {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            border-color: transparent;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-height: 600px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            border-radius: 15px 15px 0 0;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .metric-change {
+            font-size: 0.9rem;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+
+        .chart-container {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 450px;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .insight-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-card.growth {
+            border-left-color: #10b981;
+        }
+
+        .insight-card.efficiency {
+            border-left-color: #f59e0b;
+        }
+
+        .insight-card.stability {
+            border-left-color: #8b5cf6;
+        }
+
+        .insight-card.rating {
+            border-left-color: #ef4444;
+        }
+
+        .insight-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .insight-description {
+            color: #6b7280;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .insight-metric {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 1.1rem;
+        }
+
+        .benchmark-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .benchmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .benchmark-item:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .benchmark-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+
+        .benchmark-values {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .company-value {
+            font-weight: 700;
+            color: #1e40af;
+            font-size: 1.1rem;
+        }
+
+        .industry-avg {
+            color: #6b7280;
+        }
+
+        .performance-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .above-average {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .average {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .below-average {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .nav-tabs {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .nav-tab {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .overview-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .chart-wrapper {
+                height: 350px;
+            }
+
+            .benchmark-item {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .benchmark-values {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <span style="font-size: 2.5rem;">📊</span>
+                <div>
+                    <h1>Rapoarte Financiare</h1>
+                    <p style="color: #6b7280; font-size: 1rem; margin-top: 5px;">SC DEMO SRL - Analiză Completă</p>
+                </div>
+            </div>
+            <a href="http://localhost:3000" class="back-btn">
+                <span>←</span>
+                <span>Înapoi la Dashboard</span>
+            </a>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="overview">📈 Prezentare Generală</div>
+            <div class="nav-tab" data-tab="historical">📉 Tendințe Istorice</div>
+            <div class="nav-tab" data-tab="current-year">📅 Anul Curent</div>
+            <div class="nav-tab" data-tab="insights">💡 Analize</div>
+            <div class="nav-tab" data-tab="benchmarking">🎯 Comparații</div>
+        </div>
+
+        <div class="content">
+            <div class="tab-panel active" id="overview">
+                <div class="overview-grid" id="overviewMetrics">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="historical">
+                <div class="chart-container">
+                    <div class="chart-title">📈 Evoluția Cifrei de Afaceri (2018-2024)</div>
+                    <div class="chart-wrapper">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">💰 Evoluția EBITDA și Marjei</div>
+                    <div class="chart-wrapper">
+                        <canvas id="ebitdaChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">🏅 Evoluția Rating-ului de Credit</div>
+                    <div class="chart-wrapper">
+                        <canvas id="ratingChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">⚖️ Evoluția Active vs Pasive</div>
+                    <div class="chart-wrapper">
+                        <canvas id="balanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="current-year">
+                <div class="chart-container">
+                    <div class="chart-title">📊 Performanța Lunară 2024</div>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">💸 Flux de Numerar Lunar</div>
+                    <div class="chart-wrapper">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">📈 Tendințe Cumulative</div>
+                    <div class="chart-wrapper">
+                        <canvas id="cumulativeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="insights">
+                <div class="insights-grid" id="insightsContainer">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="benchmarking">
+                <div class="chart-container">
+                    <div class="chart-title">🎯 Comparații cu Industria Tehnologie</div>
+                    <div class="benchmark-container" id="benchmarkingContainer">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class FinancialReportsApp {
+            constructor() {
+                this.apiUrl = 'http://localhost:5001/api';
+                this.currentTab = 'overview';
+                this.charts = {};
+                this.data = {};
+                
+                this.initializeElements();
+                this.attachEventListeners();
+                this.loadData();
+            }
+
+            initializeElements() {
+                this.navTabs = document.querySelectorAll('.nav-tab');
+                this.tabPanels = document.querySelectorAll('.tab-panel');
+            }
+
+            attachEventListeners() {
+                this.navTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = tab.getAttribute('data-tab');
+                        this.switchTab(tabName);
+                    });
+                });
+            }
+
+            switchTab(tabName) {
+                this.navTabs.forEach(tab => {
+                    tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+                });
+
+                this.tabPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.id === tabName);
+                });
+
+                this.currentTab = tabName;
+                this.renderCurrentTab();
+            }
+
+            async loadData() {
+                try {
+                    const response = await fetch(`${this.apiUrl}/reports/data`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.data = result.data;
+                        this.renderCurrentTab();
+                    } else {
+                        throw new Error('Failed to load data');
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    this.showError('Nu s-au putut încărca datele. Verifică conexiunea cu serverul.');
+                }
+            }
+
+            renderCurrentTab() {
+                if (!this.data || Object.keys(this.data).length === 0) return;
+
+                switch (this.currentTab) {
+                    case 'overview':
+                        this.renderOverview();
+                        break;
+                    case 'historical':
+                        setTimeout(() => this.renderHistoricalCharts(), 100);
+                        break;
+                    case 'current-year':
+                        setTimeout(() => this.renderCurrentYearCharts(), 100);
+                        break;
+                    case 'insights':
+                        this.renderInsights();
+                        break;
+                    case 'benchmarking':
+                        this.renderBenchmarking();
+                        break;
+                }
+            }
+
+            renderOverview() {
+                const container = document.getElementById('overviewMetrics');
+                const overview = this.data.overview;
+                
+                container.innerHTML = `
+                    <div class="metric-card">
+                        <div class="metric-value">${this.formatCurrency(overview.current_performance.revenue)}</div>
+                        <div class="metric-label">Cifra de Afaceri 2024</div>
+                        <div class="metric-change positive">+${overview.growth_metrics.revenue_growth}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${this.formatCurrency(overview.current_performance.ebitda)}</div>
+                        <div class="metric-label">EBITDA</div>
+                        <div class="metric-change positive">${overview.current_performance.ebitda_margin}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${overview.current_performance.credit_rating.rating}</div>
+                        <div class="metric-label">Rating Credit</div>
+                        <div class="metric-change">${overview.growth_metrics.rating_trend}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${this.formatCurrency(overview.current_performance.total_assets)}</div>
+                        <div class="metric-label">Active Totale</div>
+                        <div class="metric-change positive">Stabilitate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${this.formatCurrency(overview.current_performance.equity)}</div>
+                        <div class="metric-label">Capitaluri Proprii</div>
+                        <div class="metric-change positive">Sănătate financiară</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${overview.company_info.employees}</div>
+                        <div class="metric-label">Angajați</div>
+                        <div class="metric-change positive">Echipă stabilă</div>
+                    </div>
+                `;
+            }
+
+            renderHistoricalCharts() {
+                const historical = this.data.historical;
+                
+                this.createRevenueChart(historical.revenue_trend);
+                this.createEbitdaChart(historical.ebitda_trend, historical.ebitda_margin_trend);
+                this.createRatingChart(historical.rating_trend);
+                this.createBalanceChart(historical.balance_sheet_evolution);
+            }
+
+            renderCurrentYearCharts() {
+                const currentYear = this.data.current_year;
+                
+                this.createMonthlyChart(currentYear.monthly_performance);
+                this.createCashFlowChart(currentYear.monthly_performance.cash_flow);
+                this.createCumulativeChart(currentYear.cumulative_trends);
+            }
+
+            renderInsights() {
+                const container = document.getElementById('insightsContainer');
+                const insights = this.data.insights;
+                
+                container.innerHTML = insights.map(insight => `
+                    <div class="insight-card ${insight.type}">
+                        <div class="insight-title">${insight.title}</div>
+                        <div class="insight-description">${insight.description}</div>
+                        <div class="insight-metric">${insight.metric}</div>
+                    </div>
+                `).join('');
+            }
+
+            renderBenchmarking() {
+                const container = document.getElementById('benchmarkingContainer');
+                const benchmarking = this.data.benchmarking;
+                
+                const html = Object.entries(benchmarking.comparison).map(([metric, data]) => `
+                    <div class="benchmark-item">
+                        <div class="benchmark-label">${this.getMetricLabel(metric)}</div>
+                        <div class="benchmark-values">
+                            <span class="company-value">${data.company_value}${this.getMetricUnit(metric)}</span>
+                            <span class="industry-avg">Industrie: ${data.industry_avg}${this.getMetricUnit(metric)}</span>
+                            <span class="performance-badge ${data.performance.toLowerCase().replace(' ', '-')}">${data.performance}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                container.innerHTML = html;
+            }
+
+            createRevenueChart(data) {
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                
+                if (this.charts.revenue) {
+                    this.charts.revenue.destroy();
+                }
+                
+                this.charts.revenue = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.year),
+                        datasets: [{
+                            label: 'Cifra de Afaceri (RON)',
+                            data: data.map(d => d.value),
+                            borderColor: '#1e40af',
+                            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e40af',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createEbitdaChart(ebitdaData, marginData) {
+                const ctx = document.getElementById('ebitdaChart').getContext('2d');
+                
+                if (this.charts.ebitda) {
+                    this.charts.ebitda.destroy();
+                }
+                
+                this.charts.ebitda = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ebitdaData.map(d => d.year),
+                        datasets: [{
+                            label: 'EBITDA (RON)',
+                            data: ebitdaData.map(d => d.value),
+                            backgroundColor: '#10b981',
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Marja EBITDA (%)',
+                            data: marginData.map(d => d.value),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            type: 'line',
+                            fill: false,
+                            yAxisID: 'y1',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#f59e0b',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createRatingChart(data) {
+                const ctx = document.getElementById('ratingChart').getContext('2d');
+                
+                if (this.charts.rating) {
+                    this.charts.rating.destroy();
+                }
+                
+                this.charts.rating = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.year),
+                        datasets: [{
+                            label: 'Scor Rating',
+                            data: data.map(d => d.value),
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#8b5cf6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' pts';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createBalanceChart(data) {
+                const ctx = document.getElementById('balanceChart').getContext('2d');
+                
+                if (this.charts.balance) {
+                    this.charts.balance.destroy();
+                }
+                
+                this.charts.balance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(d => d.year),
+                        datasets: [{
+                            label: 'Active',
+                            data: data.map(d => d.assets),
+                            backgroundColor: '#3b82f6'
+                        }, {
+                            label: 'Datorii',
+                            data: data.map(d => d.debt),
+                            backgroundColor: '#ef4444'
+                        }, {
+                            label: 'Capitaluri Proprii',
+                            data: data.map(d => d.equity),
+                            backgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createMonthlyChart(data) {
+                const ctx = document.getElementById('monthlyChart').getContext('2d');
+                
+                if (this.charts.monthly) {
+                    this.charts.monthly.destroy();
+                }
+                
+                this.charts.monthly = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.revenue.map(d => d.month),
+                        datasets: [{
+                            label: 'Venituri',
+                            data: data.revenue.map(d => d.value),
+                            backgroundColor: '#3b82f6'
+                        }, {
+                            label: 'EBITDA',
+                            data: data.ebitda.map(d => d.value),
+                            backgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createCashFlowChart(data) {
+                const ctx = document.getElementById('cashFlowChart').getContext('2d');
+                
+                if (this.charts.cashFlow) {
+                    this.charts.cashFlow.destroy();
+                }
+                
+                this.charts.cashFlow = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.month),
+                        datasets: [{
+                            label: 'Flux de Numerar',
+                            data: data.map(d => d.value),
+                            borderColor: '#06b6d4',
+                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#06b6d4',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createCumulativeChart(data) {
+                const ctx = document.getElementById('cumulativeChart').getContext('2d');
+                
+                if (this.charts.cumulative) {
+                    this.charts.cumulative.destroy();
+                }
+                
+                this.charts.cumulative = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.month),
+                        datasets: [{
+                            label: 'Venituri Cumulative',
+                            data: data.map(d => d.revenue),
+                            borderColor: '#1e40af',
+                            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                            fill: false,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e40af',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }, {
+                            label: 'EBITDA Cumulativ',
+                            data: data.map(d => d.ebitda),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: false,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' RON';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            formatCurrency(value) {
+                if (value >= 1000000) {
+                    return (value / 1000000).toFixed(1) + 'M RON';
+                } else if (value >= 1000) {
+                    return (value / 1000).toFixed(0) + 'k RON';
+                } else {
+                    return value.toLocaleString() + ' RON';
+                }
+            }
+
+            getMetricLabel(metric) {
+                const labels = {
+                    'ebitda_margin': 'Marja EBITDA',
+                    'debt_to_equity': 'Debt-to-Equity',
+                    'current_ratio': 'Current Ratio',
+                    'roe': 'ROE'
+                };
+                return labels[metric] || metric;
+            }
+
+            getMetricUnit(metric) {
+                const units = {
+                    'ebitda_margin': '%',
+                    'debt_to_equity': '',
+                    'current_ratio': '',
+                    'roe': '%'
+                };
+                return units[metric] || '';
+            }
+
+            showError(message) {
+                document.querySelector('.content').innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #ef4444;">
+                        <h3>⚠️ Eroare</h3>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #1e40af; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Încearcă din nou
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        const reportsApp = new FinancialReportsApp();
+    </script>
+</body>
+</html>
